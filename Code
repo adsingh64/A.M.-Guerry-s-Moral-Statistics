@@ -1,0 +1,8 @@
+setwd("~/R")
+library(tmap)
+library(sf)
+library(tidyverse)
+library(ggplot2)
+//"df" pulled from GeoDA website
+df2 <- df %>% mutate(wealthy = Wealth < 46)
+df3 <- df2 %>% mutate(donpercap = Donatns/Pop1831)
