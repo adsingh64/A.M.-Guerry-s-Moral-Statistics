@@ -3,6 +3,121 @@ library(tmap)
 library(sf)
 library(tidyverse)
 library(ggplot2)
-//"df" pulled from GeoDA website
+
+// data wrangling - "df" pulled from GeoDA website: https://geodacenter.github.io/data-and-lab//
 df2 <- df %>% mutate(wealthy = Wealth < 46)
 df3 <- df2 %>% mutate(donpercap = Donatns/Pop1831)
+variables = c("dept", "Dprtmnt","Crm_prs","Crm_prp", "Litercy", "wealthy")
+df_final <- select(df3, all_of(variables))
+
+// Descriptive statistics of data
+wealth_grouping <- df_final %>% group_by(wealthy)
+wealth_grouping %>% summarize(med_crime_persons = median(Crm_prs), min_crime_persons = min(Crm_prs), max_crime_persons = max(Crm_prs), med_literacy = median(Litercy), min_literacy = min(Litercy), max_literacy = max(Litercy))
+
+// Check distribution of data with boxplots 
+crime_persons_boxplot <- ggplot(data=df_final,aes(x="", y=Crm_prs)) +
+     geom_point(color = "blue", alpha = 0.5) + 
+     geom_boxplot(color = "blue", fill = "blue",alpha=0.5) + 
+     stat_boxplot(geom="errorbar") + 
+     ylab("Pop. per crime against person") + 
+     ggtitle("Boxplot of pop. per crime against person") + 
+     scale_x_discrete("All regions") +
+     theme(plot.title = element_text(hjust = 0.5)) 
+crime_persons_boxplot
+
+
+crime_persons_bywealth <- ggplot(data=df_final,aes(x= wealthy, y=Crm_prs)) + 
+     geom_point(color = "blue", alpha = 0.5) + 
+     geom_boxplot(aes(color = wealthy, fill = wealthy), alpha=0.5) + 
+     stat_boxplot(geom="errorbar") + 
+     ylab("Pop. per crime against person") + 
+     ggtitle("Pop. per crime against person by wealth") + 
+     scale_x_discrete("Wealth",labels=c("TRUE" = "Wealthy","FALSE" = "Not Wealthy"),limits=c("TRUE","FALSE")) +
+     scale_color_discrete(name = "Wealth", breaks = c(TRUE,      FALSE), labels = c("Wealthy", "Not Wealthy")) +
+     scale_fill_discrete(name="Wealth", breaks = c(TRUE,         FALSE),labels=c("Wealthy","Not Wealthy")) +
+     theme(plot.title = element_text(hjust = 0.5)) 
+crime_persons_bywealth
+
+
+literacy_boxplot <- ggplot(data=df_final,aes(x="", y=Litercy)) +
+     geom_point(color = "blue", alpha = 0.5) + 
+     geom_boxplot(color = "blue", fill = "blue",alpha=0.5) + 
+     stat_boxplot(geom="errorbar") + 
+     ylab("Literacy rate") + 
+     ggtitle("Literacy rate") + 
+     scale_x_discrete("All regions") +
+     theme(plot.title = element_text(hjust = 0.5)) 
+literacy_boxplot
+
+
+literacy_bywealth <- ggplot(data=df_final,aes(x= wealthy, y=Litercy)) +
+     geom_point(color = "blue", alpha = 0.5) + 
+     geom_boxplot(aes(color = wealthy, fill = wealthy), alpha=0.5) + 
+     stat_boxplot(geom="errorbar") + 
+     ylab("Literacy rate") + 
+     ggtitle("Literacy rate by wealth") + 
+     scale_x_discrete("Wealth",labels=c("TRUE" = "Wealthy","FALSE" = "Not Wealthy"),limits=c("TRUE","FALSE")) +
+     scale_color_discrete(name = "Wealth", breaks = c(TRUE,      FALSE), labels = c("Wealthy", "Not Wealthy")) +
+     scale_fill_discrete(name="Wealth", breaks = c(TRUE,         FALSE),labels=c("Wealthy","Not Wealthy")) +
+     theme(plot.title = element_text(hjust = 0.5)) 
+literacy_bywealth
+
+// Curve-fitting data
+linear_fit <- ggplot(data=df_final,aes(x=Litercy, y=Crm_prs))+ 
+geom_point(aes(color = wealthy)) + 
+geom_smooth(aes(color = wealthy), method = "lm", se= FALSE) + 
+xlab("literacy rate") + 
+ylab("pop. per crime against person") + 
+ggtitle("Lit. rate vs. Pop. per crime against person") + 
+theme(plot.title = element_text(hjust = 0.5)) + 
+scale_color_discrete(name="Wealth",breaks=c(TRUE,FALSE),labels=c("Wealthy", "Not Wealthy"))
+linear_fit
+
+loess_fit <- ggplot(data=df_final,aes(x=Litercy, y=Crm_prs))+ 
+geom_point(aes(color = wealthy)) + 
+geom_smooth(aes(color = wealthy), se= FALSE) + 
+xlab("literacy rate") + 
+ylab("pop. per crime against person") + 
+ggtitle("Lit. rate vs. Pop. per crime against person") + 
+theme(plot.title = element_text(hjust = 0.5)) + 
+scale_color_discrete(name="Wealth",breaks=c(TRUE,FALSE),labels=c("Wealthy", "Not Wealthy"))
+loess_fit
+
+loess_fit2 <- ggplot(data=df,aes(x=Desertn, y=Crm_prs))+ 
+geom_point() + 
+geom_smooth(se = FALSE) + 
+xlab("literacy rate") + 
+ylab("pop. per crime against person") + 
+ggtitle("Lit. rate vs. Pop. per crime against person") + 
+theme(plot.title = element_text(hjust = 0.5)) + 
+scale_color_discrete(name="Wealth",breaks=c(TRUE,FALSE),labels=c("Wealthy", "Not Wealthy"))
+loess_fit2
+
+// Mapping data
+tm_shape(df_final) +
+  tm_fill("Litercy", title = "Literacy Rate", palette = "Reds", n = 6, style = "quantile") +
+tm_borders() +
+tm_layout(main.title = "Literacy Rate", main.title.size = 1.0, main.title.position="center", legend.outside = TRUE, legend.outside.position = "right")
+
+
+tm_shape(df_final) +
+  tm_fill("Litercy", title = "Literacy Rate", palette = "Reds", n = 6, style = "jenks") +
+tm_borders() +
+tm_layout(main.title = "Literacy Rate Jenks", main.title.size = 1.0, main.title.position="center", legend.outside = TRUE, legend.outside.position = "right")
+
+
+tm_shape(df_final) +
+  tm_fill("Crm_prs", title = "Pop. per crime against person", palette = "Reds", n = 6, style = "quantile") +
+tm_borders() +
+tm_layout(main.title = "Pop. per crime against person", main.title.size = 1.0, main.title.position="center", legend.outside = TRUE, legend.outside.position = "right")
+
+
+tm_shape(df) +
+  tm_fill("Desertn", title = "Desertion Rates", palette = "Reds", n = 6, style = "quantile") +
+tm_borders() +
+tm_layout(main.title = "Desertion Rates", main.title.size = 1.0, main.title.position="center", legend.outside = TRUE, legend.outside.position = "right")
+
+
+
+
+
